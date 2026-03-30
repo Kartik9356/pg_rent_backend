@@ -25,6 +25,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // --- API ROUTES ---
 app.use("/api/users", require("./routes/userRoutes"));
+app.use('/api/properties', require('./routes/propertyRoutes')); // Add this line
 
 app.get("/", (req, res) => {
   res.send("RentMate API is running!");
