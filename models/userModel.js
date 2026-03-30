@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    passwordHash: {
+    phone: {
       type: String,
       required: true,
     },
@@ -20,13 +20,21 @@ const userSchema = new mongoose.Schema(
       enum: ["seeker", "owner", "admin"],
       default: "seeker",
     },
-    phone: {
-      type: String,
-      required: true,
-    },
     instagramId: {
       type: String,
       default: "Not Provided",
+    },
+    isVerified: {
+      type: Boolean,
+      default: false, // Becomes true after they verify their first OTP
+    },
+    otp: {
+      type: String, // Temporarily holds the 6-digit code
+      default: null,
+    },
+    otpExpires: {
+      type: Date, // Tracks when the OTP becomes invalid
+      default: null,
     },
     savedProperties: [
       {
@@ -36,7 +44,7 @@ const userSchema = new mongoose.Schema(
     ],
   },
   {
-    timestamps: true, // Automatically adds createdAt and updatedAt dates
+    timestamps: true,
   },
 );
 

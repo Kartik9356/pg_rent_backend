@@ -2,18 +2,30 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 require("dotenv").config();
+const connectDB = require("./config/db");
+const cookieParser = require("cookie-parser");
+
+// Connect to MongoDB
+connectDB();
 
 const app = express();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // Allows Express to parse form data
+// middlewares
+app.use(
+  cors({
+    origin: "http://localhost:5173", // Your React app's URL
+    credentials: true, // Crucial: Allows cookies to be sent
+  }),
+);
 
-// Make the 'uploads' folder publicly accessible for images
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Basic test route
+// --- API ROUTES ---
+app.use("/api/users", require("./routes/userRoutes"));
+
 app.get("/", (req, res) => {
   res.send("RentMate API is running!");
 });
