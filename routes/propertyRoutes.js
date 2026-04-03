@@ -1,25 +1,31 @@
 const express = require("express");
 const router = express.Router();
+
+// Import both Middlewares
 const { protect } = require("../middlewares/authMiddleware");
+const { admin } = require("../middlewares/adminMiddleware.js");
 const upload = require("../config/cloudinary");
+
+// Import Controllers
 const {
   createProperty,
   getProperties,
   getMyProperties,
   deleteProperty,
+  getAdminProperties,
+  updatePropertyStatus,
 } = require("../controllers/propertyController");
 
-// Public route for seekers to view properties
+// --- PUBLIC ROUTES ---
 router.get("/", getProperties);
 
-// Private route for owners to view their own dashboard inventory
+// --- PRIVATE ROUTES (Owners/Seekers) ---
 router.get("/my-properties", protect, getMyProperties);
-
-// Private route to create a property.
-// 'images' is the field name the frontend must use. maxCount is 5.
 router.post("/", protect, upload.array("images", 5), createProperty);
-
-// Private route to delete
 router.delete("/:id", protect, deleteProperty);
+
+// --- ADMIN ROUTES ---
+router.get('/admin/all', protect, admin, getAdminProperties);
+router.put('/admin/:id/status', protect, admin, updatePropertyStatus);
 
 module.exports = router;

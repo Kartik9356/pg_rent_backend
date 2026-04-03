@@ -163,9 +163,94 @@ const deleteProperty = async (req, res) => {
   }
 };
 
+// @desc    Get ALL properties for Admin Dashboard (Paginated & Filtered)
+// @route   GET /api/properties/admin/all?page=1&limit=20&status=Pending
+// @access  Private (Admin Only)
+const getAdminProperties = async (req, res) => {
+  try {
+    const { page, limit, status, search } = req.query;
+
+    // Pagination setup
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 20;
+    const startIndex = (pageNum - 1) * limitNum;
+
+    // Base query object
+    let query = {};
+
+    // If admin wants to see only 'Rejected', 'Approved', or 'Pending'
+    if (status) {
+      query.status = status;
+    }
+
+    // Optional: Let admin search by property title
+    if (search) {
+      query.title = new RegExp(search, "i");
+    }
+
+    // Count for pagination math
+    const totalProperties = await Property.countDocuments(query);
+
+    const properties = await Property.find(query)
+      .populate("ownerId", "name phone email")
+      .sort("-createdAt") // Newest first
+      .skip(startIndex)
+      .limit(limitNum);
+
+    res.status(200).json({
+      success: true,
+      count: properties.length,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(totalProperties / limitNum),
+        totalProperties,
+      },
+      data: properties,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update any property's status
+// @route   PUT /api/properties/admin/:id/status
+// @access  Private (Admin Only)
+const updatePropertyStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const validStatuses = ["Pending", "Approved", "Rejected", "Hidden"];
+
+    if (!validStatuses.includes(status)) {
+      return res
+        .status(400)
+        .json({
+          message: `Status must be one of: ${validStatuses.join(", ")}`,
+        });
+    }
+
+    const property = await Property.findById(req.params.id);
+
+    if (!property) {
+      return res.status(404).json({ message: "Property not found" });
+    }
+
+    property.status = status;
+    await property.save();
+
+    res.status(200).json({
+      message: `Property status updated to ${status}`,
+      property,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createProperty,
   getProperties,
   getMyProperties,
   deleteProperty,
+  getAdminProperties,
+  updatePropertyStatus,
 };
