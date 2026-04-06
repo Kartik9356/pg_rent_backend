@@ -2,6 +2,7 @@ const User = require("../models/userModel");
 const jwt = require("jsonwebtoken");
 const sendEmail = require("../utils/sendEmail");
 const sendSms = require("../utils/sendSms");
+const Property = require("../models/propertyModel");
 
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
@@ -84,7 +85,6 @@ const loginUser = async (req, res) => {
   }
 };
 
-
 // @route   POST /api/users/verify
 const verifyOtp = async (req, res) => {
   try {
@@ -127,4 +127,74 @@ const verifyOtp = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, verifyOtp };
+// @desc    Toggle saving/unsaving a property to wishlist
+// @route   POST /api/users/wishlist/:propertyId
+// @access  Private (Seeker/Owner)
+const toggleSaveProperty = async (req, res) => {
+  try {
+    const propertyId = req.params.propertyId;
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Verify the property actually exists before saving it
+    const propertyExists = await Property.findById(propertyId);
+    if (!propertyExists) {
+      return res.status(404).json({ message: "Property not found" });
+    }
+
+    // Check if property is already in the savedProperties array
+    const isSaved = user.savedProperties.includes(propertyId);
+
+    if (isSaved) {
+      // Remove it from the array
+      user.savedProperties = user.savedProperties.filter(
+        (id) => id.toString() !== propertyId.toString(),
+      );
+      await user.save();
+      res.status(200).json({
+        message: "Property removed from wishlist",
+        savedProperties: user.savedProperties,
+      });
+    } else {
+      // Add it to the array
+      user.savedProperties.push(propertyId);
+      await user.save();
+      res.status(200).json({
+        message: "Property added to wishlist",
+        savedProperties: user.savedProperties,
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get logged-in user's saved properties
+// @route   GET /api/users/wishlist
+// @access  Private (Seeker/Owner)
+const getSavedProperties = async (req, res) => {
+  try {
+    // Find the user and "populate" the savedProperties array
+    // so it returns the actual property objects, not just the ID strings
+    const user = await User.findById(req.user._id).populate("savedProperties");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(user.savedProperties);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
+  verifyOtp,
+  toggleSaveProperty,
+  getSavedProperties,
+};
