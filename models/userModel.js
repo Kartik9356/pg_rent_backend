@@ -20,10 +20,6 @@ const userSchema = new mongoose.Schema(
       enum: ["seeker", "owner", "admin"],
       default: "seeker",
     },
-    instagramId: {
-      type: String,
-      default: "Not Provided",
-    },
     isVerified: {
       type: Boolean,
       default: false, // Becomes true after they verify their first OTP

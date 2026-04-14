@@ -107,7 +107,7 @@ const getProperties = async (req, res) => {
 
     // 4. Fetch the filtered data
     const properties = await Property.find(query)
-      .populate("ownerId", "name phone instagramId")
+      .populate("ownerId", "name phone ")
       .sort("-createdAt")
       .skip(startIndex)
       .limit(limitNum);

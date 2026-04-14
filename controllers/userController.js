@@ -191,10 +191,41 @@ const getSavedProperties = async (req, res) => {
   }
 };
 
+// @desc    Get the currently logged-in user profile
+// @route   GET /api/users/profile
+// @access  Private (Requires Cookie)
+const getUserProfile = async (req, res) => {
+  try {
+    // req.user is already provided by the 'protect' middleware
+    const user = await User.findById(req.user._id).select("-otp -otpExpires");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Logout user / clear cookie
+// @route   POST /api/users/logout
+// @access  Public
+const logoutUser = (req, res) => {
+  res.cookie("jwt", "", {
+    httpOnly: true,
+    expires: new Date(0), // Set expiration to a past date to instantly delete the cookie
+  });
+  res.status(200).json({ message: "Logged out successfully" });
+};
+
 module.exports = {
   registerUser,
   loginUser,
+  logoutUser,
   verifyOtp,
+  getUserProfile,
   toggleSaveProperty,
   getSavedProperties,
 };
