@@ -5,6 +5,9 @@ require("dotenv").config();
 const connectDB = require("./config/db");
 const cookieParser = require("cookie-parser");
 
+const userRoutes = require("./routes/userRoutes");
+
+
 // Connect to MongoDB
 connectDB();
 
@@ -17,6 +20,8 @@ app.use(
     credentials: true, // Crucial: Allows cookies to be sent
   }),
 );
+
+app.use("/api/users", userRoutes);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

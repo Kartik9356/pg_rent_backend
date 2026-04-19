@@ -11,6 +11,19 @@ const {
   logoutUser, // Added
 } = require("../controllers/userController");
 
+
+const User = require("../models/userModel.js");
+// GET all users
+router.get("/all", async (req, res) => {
+  try {
+    const users = await User.find().select(
+      "name email phone role createdAt"
+    );
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 // Public Auth Routes
 router.post("/register", registerUser);
 router.post("/login", loginUser);
