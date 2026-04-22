@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const sendEmail = require("../utils/sendEmail");
 const sendSms = require("../utils/sendSms");
 const Property = require("../models/propertyModel");
+const { get } = require("mongoose");
 
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
@@ -220,6 +221,54 @@ const logoutUser = (req, res) => {
   res.status(200).json({ message: "Logged out successfully" });
 };
 
+// @desc    Get all users with pagination and search
+// @route   GET /api/users/admin/all
+// @access  Private (Admin Only)
+const getAdminUsers = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Search logic (Search by name or email)
+    const searchQuery = req.query.search
+      ? {
+          $or: [
+            { name: { $regex: req.query.search, $options: "i" } },
+            { email: { $regex: req.query.search, $options: "i" } },
+          ],
+        }
+      : {};
+
+    // Filter by role if provided (?role=seeker)
+    if (req.query.role) {
+      searchQuery.role = req.query.role;
+    }
+
+    // Exclude sensitive OTP info
+    const users = await User.find(searchQuery)
+      .select("-otp -otpExpires")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const total = await User.countDocuments(searchQuery);
+
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalUsers: total,
+      },
+      data: users,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -228,4 +277,5 @@ module.exports = {
   getUserProfile,
   toggleSaveProperty,
   getSavedProperties,
+  getAdminUsers,
 };

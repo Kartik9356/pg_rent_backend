@@ -9,7 +9,10 @@ const {
   getSavedProperties,
   getUserProfile, // Added
   logoutUser, // Added
+  getAdminUsers, // Added
 } = require("../controllers/userController");
+
+const { admin } = require("../middlewares/adminMiddleware"); // Import admin middleware
 
 // Public Auth Routes
 router.post("/register", registerUser);
@@ -21,5 +24,7 @@ router.get("/profile", protect, getUserProfile); // Added
 router.get("/wishlist", protect, getSavedProperties);
 router.post("/wishlist/:propertyId", protect, toggleSaveProperty);
 router.post("/logout", logoutUser); // Add to the Public Auth Routes section
+
+router.get('/admin/all', protect, admin, getAdminUsers);
 
 module.exports = router;
