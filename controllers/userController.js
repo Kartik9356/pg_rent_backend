@@ -221,39 +221,43 @@ const logoutUser = (req, res) => {
   res.status(200).json({ message: "Logged out successfully" });
 };
 
-// @desc    Get all users with pagination and search
-// @route   GET /api/users/admin/all
+// @desc    Get all users with pagination, filtering, and search
+// @route   GET /api/users/admin/all?page=1&limit=20&role=owner
 // @access  Private (Admin Only)
 const getAdminUsers = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    // 1. Pagination Setup (Defaults to page 1, limit 20 to match your properties route)
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
     const skip = (page - 1) * limit;
 
-    // Search logic (Search by name or email)
-    const searchQuery = req.query.search
-      ? {
-          $or: [
-            { name: { $regex: req.query.search, $options: "i" } },
-            { email: { $regex: req.query.search, $options: "i" } },
-          ],
-        }
-      : {};
+    // 2. Build the Query Object
+    let query = {};
 
-    // Filter by role if provided (?role=seeker)
+    // Filter by Role (Equivalent to filtering by 'status' for properties)
     if (req.query.role) {
-      searchQuery.role = req.query.role;
+      query.role = req.query.role;
     }
 
-    // Exclude sensitive OTP info
-    const users = await User.find(searchQuery)
-      .select("-otp -otpExpires")
+    // Search by Name or Email
+    if (req.query.search) {
+      query.$or = [
+        { name: { $regex: req.query.search, $options: "i" } },
+        { email: { $regex: req.query.search, $options: "i" } },
+      ];
+    }
+
+    // 3. Execute Query with Pagination
+    const users = await User.find(query)
+      .select("-otp -otpExpires") // Exclude sensitive login data
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 }); // Newest users first
 
-    const total = await User.countDocuments(searchQuery);
+    // 4. Get Total Count for Pagination Metadata
+    const total = await User.countDocuments(query);
 
+    // 5. Send Formatted Response (Matches your exact API documentation structure)
     res.status(200).json({
       success: true,
       count: users.length,
