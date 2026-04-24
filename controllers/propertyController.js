@@ -221,11 +221,9 @@ const updatePropertyStatus = async (req, res) => {
     const validStatuses = ["Pending", "Approved", "Rejected", "Hidden"];
 
     if (!validStatuses.includes(status)) {
-      return res
-        .status(400)
-        .json({
-          message: `Status must be one of: ${validStatuses.join(", ")}`,
-        });
+      return res.status(400).json({
+        message: `Status must be one of: ${validStatuses.join(", ")}`,
+      });
     }
 
     const property = await Property.findById(req.params.id);
@@ -246,11 +244,82 @@ const updatePropertyStatus = async (req, res) => {
   }
 };
 
+// @desc    Get single property by ID
+// @route   GET /api/properties/:id
+// @access  Public
+const getPropertyById = async (req, res) => {
+  try {
+    const property = await Property.findById(req.params.id).populate(
+      "ownerId",
+      "name email phone",
+    ); // Get owner details so users can contact them
+
+    if (!property) {
+      return res.status(404).json({ message: "Property not found" });
+    }
+
+    res.status(200).json(property);
+  } catch (error) {
+    res.status(500).json({ message: "Invalid Property ID or Server Error" });
+  }
+};
+
+// @desc    Update a property
+// @route   PUT /api/properties/:id
+// @access  Private (Owner Only)
+const updateProperty = async (req, res) => {
+  try {
+    let property = await Property.findById(req.params.id);
+    if (!property)
+      return res.status(404).json({ message: "Property not found" });
+
+    // Security Check: Make sure the logged-in user actually owns this property
+    if (property.ownerId.toString() !== req.user._id.toString()) {
+      return res
+        .status(401)
+        .json({ message: "Not authorized to edit this property" });
+    }
+
+    // Update Text Fields
+    property.title = req.body.title || property.title;
+    property.propertyCategory =
+      req.body.propertyCategory || property.propertyCategory;
+
+    if (req.body.address) property.address = JSON.parse(req.body.address);
+    if (req.body.location) property.location = JSON.parse(req.body.location);
+    if (req.body.generalAmenities)
+      property.generalAmenities = JSON.parse(req.body.generalAmenities);
+
+    if (req.body.flatDetails)
+      property.flatDetails = JSON.parse(req.body.flatDetails);
+    if (req.body.roomConfigurations)
+      property.roomConfigurations = JSON.parse(req.body.roomConfigurations);
+
+    // If new images were uploaded, process them via Cloudinary/Multer and append to existing
+    if (req.files && req.files.length > 0) {
+      const newImagePaths = req.files.map((file) => file.path);
+      property.images = [...property.images, ...newImagePaths];
+    }
+
+    // Every time an owner edits a property, it should probably go back to 'Pending' for admin review
+    property.status = "Pending";
+
+    const updatedProperty = await property.save();
+    res.status(200).json(updatedProperty);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Make sure to export it at the bottom!
+
 module.exports = {
   createProperty,
   getProperties,
   getMyProperties,
   deleteProperty,
   getAdminProperties,
+  getPropertyById,
   updatePropertyStatus,
+  updateProperty,
 };
