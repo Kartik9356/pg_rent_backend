@@ -311,12 +311,28 @@ const updateProperty = async (req, res) => {
   }
 };
 
+// @desc    Get latest approved properties for the homepage carousel
+// @route   GET /api/properties/latest
+// @access  Public
+const getLatestProperties = async (req, res) => {
+  try {
+    const properties = await Property.find({ status: "Approved" })
+      .sort({ createdAt: -1 }) // -1 means newest first
+      .limit(6); // Perfect amount for a UI carousel
+
+    res.status(200).json(properties);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch latest properties" });
+  }
+};
+
 // Make sure to export it at the bottom!
 
 module.exports = {
   createProperty,
   getProperties,
   getMyProperties,
+  getLatestProperties,
   deleteProperty,
   getAdminProperties,
   getPropertyById,

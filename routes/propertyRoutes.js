@@ -6,19 +6,18 @@ const { protect } = require("../middlewares/authMiddleware");
 const { admin } = require("../middlewares/adminMiddleware.js");
 const upload = require("../config/cloudinary");
 
-
 // Import Controllers
 const {
   createProperty,
   getProperties,
   getMyProperties,
+  getLatestProperties,
   deleteProperty,
   getAdminProperties,
   getPropertyById,
   updatePropertyStatus,
   updateProperty,
 } = require("../controllers/propertyController");
-
 
 // --- ADMIN ROUTES ---
 router.get("/admin/all", protect, admin, getAdminProperties);
@@ -32,6 +31,7 @@ router.delete("/:id", protect, deleteProperty);
 
 // --- PUBLIC ROUTES ---
 router.get("/", getProperties);
+router.get("/latest", getLatestProperties);
 router.get("/:id", getPropertyById);
 
 module.exports = router;
