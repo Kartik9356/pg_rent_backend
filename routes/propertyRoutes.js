@@ -26,7 +26,7 @@ router.put("/admin/:id/status", protect, admin, updatePropertyStatus);
 // --- OWNER ROUTES ---
 router.post("/", protect, upload.array("images", 5), createProperty);
 router.get("/my-properties", protect, getMyProperties);
-router.put("/:id", protect, /* upload.array('images', 5), */ updateProperty);
+router.put("/:id", protect, upload.array('images', 5),  updateProperty);
 router.delete("/:id", protect, deleteProperty);
 
 // --- PUBLIC ROUTES ---
